@@ -371,4 +371,28 @@ describe('Circuit Breaker', function(){
     });
 
   });
+
+  describe('decayFunction', function () {
+    it ("should reduce the number of failure if the circuit is closed", function (done) {
+      var breaker = new CircuitBreaker(callback, {
+        timeout: 10,
+        maxFailures: 10,
+        decayDelay: 30,
+        decayFunction: function (numFailures) {return 0;}
+      });
+      callback.yields(new Error('fail'));
+
+      var noop = function () {};
+
+      breaker.invoke().fail(noop);
+      breaker.invoke().fail(noop);
+      breaker.invoke().fail(noop);
+      breaker._numFailures.should.equal(3);
+
+      setTimeout(function () {
+        breaker._numFailures.should.equal(0);
+        done();
+      }, 60);
+    });
+  });
 });
